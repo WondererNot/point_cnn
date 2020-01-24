@@ -59,19 +59,6 @@ BN_DECAY_CLIP = 0.99
 
 HOSTNAME = socket.gethostname()
 
-data_fname = 'test_order.npy'
-X = np.load(data_fname)
-data_fname = 'label_order.npy'
-y = np.load(data_fname)
-
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
-sss.get_n_splits(X, y)
-
-for train_index, test_index in sss.split(X, y):
-    print("TRAIN:", train_index, "TEST:", test_index)
-    X_train, X_test = X[train_index], X[test_index]
-    y_train, y_test = y[train_index], y[test_index]
-
 # ModelNet40 official train/test split
 """
 TRAIN_FILES = provider.getDataFiles( \
@@ -106,6 +93,18 @@ def get_bn_decay(batch):
     return bn_decay
 
 def train():
+    data_fname = 'test_order.npy'
+    X = np.load(data_fname)
+    data_fname = 'label_order.npy'
+    y = np.load(data_fname)
+
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=0)
+    sss.get_n_splits(X, y)
+
+    for train_index, test_index in sss.split(X, y):
+        print("TRAIN:", train_index, "TEST:", test_index)
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
     with tf.Graph().as_default():
         with tf.device('/gpu:'+str(GPU_INDEX)):
             pointclouds_pl, labels_pl = MODEL.placeholder_inputs(BATCH_SIZE, NUM_POINT)
@@ -173,8 +172,8 @@ def train():
             log_string('**** EPOCH %03d ****' % (epoch))
             sys.stdout.flush()
              
-            train_one_epoch(sess, ops, train_writer)
-            eval_one_epoch(sess, ops, test_writer)
+            train_one_epoch(sess, ops, train_writer, X_train, y_train)
+            eval_one_epoch(sess, ops, test_writer, X_test, y_test)
             
             # Save the variables to disk.
             if epoch % 10 == 0:
@@ -183,7 +182,7 @@ def train():
 
 
 
-def train_one_epoch(sess, ops, train_writer):
+def train_one_epoch(sess, ops, train_writer, X_train, y_train):
     """ ops: dict mapping from string to tf ops """
     is_training = True
     """
@@ -231,7 +230,7 @@ def train_one_epoch(sess, ops, train_writer):
         log_string('accuracy: %f' % (total_correct / float(total_seen)))
 
         
-def eval_one_epoch(sess, ops, test_writer):
+def eval_one_epoch(sess, ops, test_writer, X_test, y_test):
     """ ops: dict mapping from string to tf ops """
     is_training = False
     total_correct = 0
