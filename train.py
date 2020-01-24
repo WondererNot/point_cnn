@@ -193,7 +193,7 @@ def train_one_epoch(sess, ops, train_writer, X_train, y_train):
     for fn in range(len(X_train)):
         log_string('----' + str(fn) + '-----')
         #current_data = current_data[:,0:NUM_POINT,:]
-        X_train, y_train, _ = provider.shuffle_data(current_data, np.squeeze(y_train))            
+        X_train, y_train, _ = provider.shuffle_data(X_train, np.squeeze(y_train))            
         current_label = np.squeeze(y_train)
         
         file_size = X_train.shape[0]
